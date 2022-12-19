@@ -1,0 +1,484 @@
+// Granule cell model based on the 189-1-33dw morphology and channels from Diwakar et al., 2009
+// (c) Xu (Shawn) Zhang, UConn
+// xu.3.zhang@uconn.edu
+
+load_file("nrngui.hoc")
+load_file("stdlib.hoc")
+load_file("import3d.hoc")
+
+// Changed parameters from Diwakar et al., 2009
+cm_soma_scale = 0.82297     // uf/cm2     
+Ra_soma_scale = 1.4538    // ohm cm       
+cm_hillock_scale = 0.8293     // uf/cm2  
+Ra_hillock_scale = 2.0446    // ohm cm    
+cm_dend_scale = 1.2197     // uf/cm2      
+Ra_dend_scale = 1.3123    // ohm cm       
+soma_scale_LKG = 0.097446                
+soma_scale_KIR = 0.11986                
+soma_scale_KA = 0.36714                   
+soma_scale_KM = 2.7145                   
+hillock_scale = 0.0012118                    
+hillock_scale_Na = 4.001                 
+dend_scale = 0.14219                      
+axon_scale = 0.49723   
+
+objref cvode
+cvode = new CVode()
+cvode.active(0)
+
+proc celldef() {
+  topol()
+  // subsets()
+}
+
+nsg = 5
+naxon = 30	
+ndend = 25
+
+create soma, dend[25]
+create hillock[nsg], axon[naxon], branch0, branch1, branch2, branch3
+
+proc topol() { local i
+  connect dend[0](0), soma(0.5)
+  connect dend[7](0), soma(0.5)
+  connect dend[15](0), soma(0.5)
+  connect dend[18](0), soma(0.5)
+  connect dend[5](0), dend[4](1)
+  connect dend[6](0), dend[4](1)
+  connect dend[13](0), dend[12](1)
+  connect dend[14](0), dend[12](1)
+  for i = 1, 4 connect dend[i](0), dend[i-1](1)
+  for i = 8, 12 connect dend[i](0), dend[i-1](1)
+  for i = 16, 17 connect dend[i](0), dend[i-1](1)
+  for i = 19, 24 connect dend[i](0), dend[i-1](1)
+  shape3d_1()
+}
+proc shape3d_1() {
+  soma {pt3dclear()
+	pt3dadd(-4.16173, 0, 0, 8.32346)
+	pt3dadd(0, 0, 0, 8.32346)
+	pt3dadd(4.16173, 0, 0, 8.32346)
+  }
+  // Segment A
+  dend[0] {pt3dclear()
+	pt3dstyle(1, 0, 0, 0)
+	pt3dadd(2.63, 0.10, 3.8, 1.42)
+	pt3dadd(3.71, 0.17, 5.94, 1.18)
+	pt3dadd(5.33, 0.38, 8.37, 1.06)
+  }
+  dend[1] {pt3dclear()
+	pt3dadd(5.33, 0.38, 8.37, 1.06)
+	pt3dadd(4.33, -1.01, 11.32, 1.06)
+	pt3dadd(4.61, -1.74, 13.62, 1.06)
+  }
+  dend[2] {pt3dclear()
+	pt3dadd(4.61, -1.74, 13.62, 1.06)
+	pt3dadd(6.21, -2.58, 16.14, 1.06)
+	pt3dadd(7.05, -0.96, 19.35, 0.94)
+  }
+  dend[3] {pt3dclear()
+	pt3dadd(7.05, -0.96, 19.35, 0.94)
+	pt3dadd(6.51, -3, 21.74, 0.94)
+	pt3dadd(5.69, -3.07, 23.71, 0.94)
+	pt3dadd(5.73, -3.5, 25.32, 0.94)
+  }
+  dend[4] {pt3dclear()
+	pt3dadd(5.73, -3.5, 25.32, 0.94)
+	pt3dadd(4.29, -0.47, 26.42, 0.94)
+  }
+  // Sub-segment a to Segment A
+  dend[5] {pt3dclear()
+	pt3dadd(4.29, -0.47, 26.42, 0.94)
+	pt3dadd(3.44, -0.69, 27.88, 0.94)
+	pt3dadd(3.23, -0.92, 29.15, 0.94)
+	pt3dadd(3.14, -1.11, 30.32, 0.94)
+	pt3dadd(3.67, -1.05, 30.85, 0.94)
+  }
+  // Sub-segment b to Segment A
+  dend[6] {pt3dclear()
+	pt3dadd(4.29, -0.47, 26.42, 0.94)
+	pt3dadd(5.45, -0.55, 27.11, 0.94)
+	pt3dadd(6.29, -0.48, 28.14, 0.94)
+	pt3dadd(5.84, -0.79, 29.5, 0.94)
+	pt3dadd(4.99, -1.09, 30.1, 0.94)
+  }
+  // Segment B
+  dend[7] {pt3dclear()
+	pt3dstyle(1, 0, 0, 0)
+	pt3dadd(-1.69, 0.33, -4.55, 1.3)
+	pt3dadd(-1.69, -0.80, -8.59, 1.18)
+	pt3dadd(-2.06, -1.24, -11.93, 1.18)
+  }
+  dend[8] {pt3dclear()
+	pt3dadd(-2.06, -1.24, -11.93, 1.18)
+	pt3dadd(-2.14, -0.36, -19.36, 1.18)
+  }
+  dend[9] {pt3dclear()
+	pt3dadd(-2.14, -0.36, -19.36, 1.18)
+	pt3dadd(-1.85, -1.33, -24.07, 0.94)
+	pt3dadd(-1.07, -1.53, -29.32, 0.94)
+  }
+  dend[10] {pt3dclear()
+	pt3dadd(-1.07, -1.53, -29.32, 0.94)
+	pt3dadd(-2.08, -2.17, -32.04, 0.94)
+	pt3dadd(-2.42, -1.7, -37.39, 0.94)
+	pt3dadd(-2.24, -1.47, -39.38, 0.94)
+  }
+  dend[11] {pt3dclear()
+	pt3dadd(-2.24, -1.47, -39.38, 0.94)
+	pt3dadd(-2.89, -1.86, -41.42, 0.94)
+	pt3dadd(-4.29, -2.67, -41.43, 0.94)
+  }
+  dend[12] {pt3dclear()
+	pt3dadd(-4.29, -2.67, -41.43, 0.94)
+	pt3dadd(-3.65, -2.48, -44.22, 0.94)
+	pt3dadd(-3.97, -2.39, -45.79, 0.94)
+  }
+  // Sub-segment a to Segment B
+  dend[13] {pt3dclear()
+	pt3dadd(-3.97, -2.39, -45.79, 0.94)
+	pt3dadd(-5.06, -2.6, -45.44, 0.94)
+	pt3dadd(-6.12, -2.7, -46.61, 0.94)
+	pt3dadd(-6.07, -2.6, -47.2, 0.94)
+  }
+  // Sub-segment b to Segment B
+  dend[14] {pt3dclear()
+	pt3dadd(-3.97, -2.39, -45.79, 0.94)
+	pt3dadd(-4.28, -2.34, -47.38, 0.94)
+	pt3dadd(-5.85, -2.66, -47.91, 0.94)
+  }
+  // Segment C
+  dend[15] {pt3dclear()
+	pt3dstyle(1, 0, 0, 0)
+	pt3dadd(-4.06, -1.06, 0.80, 1.3)
+	pt3dadd(-8.79, 4.17, 0.68, 1.06)
+  }
+  dend[16] {pt3dclear()
+	pt3dadd(-8.79, 4.17, 0.68, 1.06)
+	pt3dadd(-11.24, 4.91, 1.44, 0.94)
+	pt3dadd(-13.23, 6.28, 2.23, 0.94)
+  }
+  dend[17] {pt3dclear()
+	pt3dadd(-13.23, 6.28, 2.23, 0.94)
+	pt3dadd(-13.77, 0.75, 2.13, 0.94)
+	pt3dadd(-14.51, -1.49, 2.43, 0.94)
+  }
+  // Segment D
+  dend[18] {pt3dclear()
+	pt3dstyle(1, 0, 0, 0)
+	pt3dadd(-0.81, -0.58, 3.42, 1.06)
+	pt3dadd(-1.94, 0.90, 5.97, 0.94)
+	pt3dadd(-4.23, 1.49, 8.77, 0.94)
+  }
+  dend[19] {pt3dclear()
+	pt3dadd(-4.23, 1.49, 8.77, 0.94)
+	pt3dadd(-5.54, 1.41, 11.78, 0.94)
+	pt3dadd(-5.4, 1.12, 14.39, 0.83)
+  }
+  dend[20] {pt3dclear()
+	pt3dadd(-5.4, 1.12, 14.39, 0.83)
+	pt3dadd(-7.96, 0.25, 16.09, 0.83)
+	pt3dadd(-10.86, -0.10, 20.86, 0.83)
+	pt3dadd(-11.77, 0.68, 25, 0.83)
+  }
+  dend[21] {pt3dclear()
+	pt3dadd(-11.77, 0.68, 25, 0.83)
+	pt3dadd(-12.27, 0.19, 27.17, 0.83)
+	pt3dadd(-12.85, -1.33, 28.91, 0.83)
+  }
+  dend[22] {pt3dclear()
+	pt3dadd(-12.85, -1.33, 28.91, 0.83)
+	pt3dadd(-13.54, -3.84, 32.54, 0.83)
+	pt3dadd(-13.61, -4.2, 34.88, 0.83)
+  }
+  dend[23] {pt3dclear()
+	pt3dadd(-13.61, -4.2, 34.88, 0.83)
+	pt3dadd(-13.34, -4.21, 35.49, 0.83)
+	pt3dadd(-11.61, -3.34, 35.65, 0.83)
+	pt3dadd(-10.26, -3.52, 34.88, 0.83)
+	pt3dadd(-9.28, -3.31, 34.39, 0.83)
+  }
+  dend[24] {pt3dclear()
+	pt3dadd(-9.28, -3.31, 34.39, 0.83)
+	pt3dadd(-14.53, -4.93, 38.06, 0.83)
+  }
+}
+
+celldef()
+
+soma {
+	access soma 
+	nseg = 1 
+	diam = 8.3234596 // 5.8 
+	L = 8.3234596 // 5.8 
+	cm = 1 
+	Ra = 100
+	celsius=30
+	 
+	// Soma Channels 
+	insert GRC_LKG1
+	insert GRC_LKG2
+	insert GRC_KIR 
+	insert GRC_KA 
+	insert GRC_KM 
+	insert GRC_NA 
+	insert GRC_KV 
+	insert GRC_KCA
+	insert GRC_CA 
+	insert GRC_CALC 
+	
+	ena = 87.39	
+	ek = -84.69 
+	eca = 129.33 
+	ecl = -65
+} 
+
+// Hillock definition 
+for(w1=0;w1<nsg;w1=w1+1) {
+	hillock[w1] {
+		access hillock[w1]
+		nseg = 1 
+		diam = 2.3-0.5*w1 
+		L = 0.5 
+		cm = 1 
+		Ra = 100
+		
+		// Hillock Channels 
+		insert GRC_LKG1 
+		insert GRC_NA 
+		insert GRC_KV 
+		ena = 87.39
+		ek = -84.69 
+	}
+}
+
+// Axon definition
+for(w3=0;w3<naxon;w3=w3+1) { 
+	axon[w3] {
+		access axon[w3] 
+		nseg = 1 
+		diam = 0.3 
+		L = 2.3367 
+		cm = 1 
+		Ra = 100
+		
+		// Axon Channels 
+		insert GRC_LKG1
+		insert GRC_NA 
+		insert GRC_KV 
+		ena = 87.39 
+		ek = -84.69  
+	}
+}
+
+// Dendrite definition: first compartment     
+for(w2=0;w2<ndend;w2=w2+1) { 
+	dend[w2] {
+		access dend[w2]  
+		// nseg = 1 
+		// diam = 0.75 
+		// L = 5 
+		cm = 1 
+		Ra = 100
+		
+		// Dendritic Channels 
+		insert GRC_LKG1 
+		insert GRC_LKG2
+		insert GRC_KIR 
+		insert GRC_KA 
+		insert GRC_KCA 
+		insert GRC_CA 
+		insert GRC_CALC 
+		
+		eca = 129.33 
+		ek = -84.69 
+	}
+} 
+
+//Passive compartments -to maintain propagation delay and to avoid spike reflection     
+branch0 {
+	access branch0 
+	nseg = 1 
+	diam = 0.3
+	L = 3
+	cm = 0.5 
+	Ra = 100
+	celsius=30
+	insert GRC_LKG1
+}
+branch1 {
+	access branch1 
+	nseg = 1 
+	diam = 0.2
+	L = 5
+	cm = 0.45 
+	Ra = 100
+	celsius=30
+	insert GRC_LKG1
+}
+branch2 {
+	access branch2 
+	nseg = 1 
+	diam = 0.1
+	L = 10
+	cm = 1 
+	Ra = 90
+	celsius=30
+	insert GRC_LKG1 	
+}
+branch3 {
+	access branch3 
+	nseg = 1 
+	diam = 0.1
+	L = 200
+	cm = 1 
+	Ra = 100
+	celsius=30
+	insert GRC_LKG1
+}	 
+
+//Connect all compartments
+connect soma(1), hillock[0](0)
+connect hillock[0](1), hillock[1](0)
+connect hillock[1](1), hillock[2](0)
+connect hillock[2](1), hillock[3](0)
+connect hillock[3](1), hillock[4](0)
+connect hillock[4](1), axon[0](0)
+
+for(i=0;i<naxon-1;i=i+1) {
+	connect axon[i](1), axon[i+1](0)
+}
+
+connect axon[naxon-1](1),branch0(0)
+connect branch0(1),branch1(0)
+connect branch1(1),branch2(0)
+connect branch2(1),branch3(0)
+
+// Soma definition
+soma_scale = 1
+soma {
+	gl_GRC_LKG1 = 0.00010722615 *soma_scale
+	el_GRC_LKG1 = -16.5
+	ggaba_GRC_LKG2 = 0 *soma_scale
+	gkbar_GRC_KIR = 0.0025485089 *soma_scale
+	gkbar_GRC_KA = 0.009061365 *soma_scale
+	gkbar_GRC_KM = 0.00025 *soma_scale
+	gnabar_GRC_NA = 0 *soma_scale
+	gkbar_GRC_KV = 0 *soma_scale
+	gkbar_GRC_KCA = 0 *soma_scale
+	gcabar_GRC_CA = 0 *soma_scale
+	beta_GRC_CALC = 1.5
+}
+
+// Hillock definition 
+for(w1=0;w1<nsg;w1=w1+1) {
+	hillock[w1] {
+		access hillock[w1]
+		
+		gl_GRC_LKG1 = 9.6189008e-5
+		el_GRC_LKG1 = -16.5
+		gnabar_GRC_NA = 0.23888925
+		gkbar_GRC_KV = 0.03567304
+	}
+}
+
+// Axon definition
+for(w3=0;w3<naxon;w3=w3+1) { 
+	axon[w3] {
+		access axon[w3] 
+		gl_GRC_LKG1 = 8.5759304e-6
+		el_GRC_LKG1 = -16.5
+		gnabar_GRC_NA = 0.027122015
+		gkbar_GRC_KV = 0.0044743111
+	}
+}
+
+// Dendrite definition 
+dend_scale = 0.1
+for(w2=0;w2<ndend;w2=w2+1) { 
+	dend[w2] {
+		access dend[w2] 
+		gl_GRC_LKG1 = 4.5088597e-5 *dend_scale
+		ggaba_GRC_LKG2 = 9.52576e-5 *dend_scale
+		cai0_GRC_CALC = 0.00225
+		
+		gkbar_GRC_KIR = 0
+		gkbar_GRC_KA = 0
+		gkbar_GRC_KCA = 0.03810304 *dend_scale
+		gcabar_GRC_CA = 0.0058424661 *dend_scale
+		beta_GRC_CALC = 0.6
+	}
+}	 
+
+branch0 {
+	gl_GRC_LKG1 = 5e-9
+}
+
+branch1 {
+	gl_GRC_LKG1 = 5e-9
+}
+
+branch2 {
+	gl_GRC_LKG1 = 5e-9
+}
+
+branch3 {
+	gl_GRC_LKG1 = 5e-9
+}
+
+usetable_GRC_KA 	= 0
+usetable_GRC_KIR 	= 0
+usetable_GRC_KM 	= 0
+usetable_GRC_NA 	= 0
+usetable_GRC_KV 	= 0
+usetable_GRC_KCA 	= 0
+usetable_GRC_CA 	= 0
+    
+soma {
+	cm = 1 *cm_soma_scale
+	Ra = 100 *Ra_soma_scale
+	gl_GRC_LKG1 = 0.00010722615 *soma_scale_LKG
+	gkbar_GRC_KIR = 0.0025485089 *soma_scale_KIR
+	gkbar_GRC_KA = 0.009061365 *soma_scale_KA
+	gkbar_GRC_KM = 0.00025 *soma_scale_KM
+}
+
+for(w1=0;w1<nsg;w1=w1+1) {
+	hillock[w1] {
+		access hillock[w1]
+		cm = 1 *cm_hillock_scale
+		Ra = 100 *Ra_hillock_scale
+		gl_GRC_LKG1 = 9.6189008e-5 *hillock_scale
+		gnabar_GRC_NA = 0.23888925 *hillock_scale_Na
+		gkbar_GRC_KV = 0.03567304 *hillock_scale
+	}
+}
+
+// Dendrite definition
+for(w2=0;w2<ndend;w2=w2+1) { 
+	dend[w2] {
+		access dend[w2] 
+		cm = 1 *cm_dend_scale
+		Ra = 100 *Ra_dend_scale
+		gl_GRC_LKG1 = 4.5088597e-5 *dend_scale
+		ggaba_GRC_LKG2 = 9.52576e-5 *dend_scale
+		gkbar_GRC_KCA = 0.03810304 *dend_scale
+		gcabar_GRC_CA = 0.0058424661 *dend_scale
+	}
+}	 
+
+// Axon definition
+for(w3=0;w3<naxon;w3=w3+1) { 
+	axon[w3] {
+		access axon[w3] 
+		gl_GRC_LKG1 = 8.5759304e-6 *axon_scale
+		el_GRC_LKG1 = -16.5 *axon_scale
+		gnabar_GRC_NA = 0.027122015 *axon_scale
+		gkbar_GRC_KV = 0.0044743111 *axon_scale
+	}
+}
+
+dt = 0.025
+// celsius = 37
+tstop = 1000
+v_init = -65

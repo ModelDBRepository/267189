@@ -1,0 +1,504 @@
+// Template of the Purkinje cell model, Masoli et al.,2015
+// Masoli S, Solinas S, D'Angelo E (2015) Action potential processing in a detailed Purkinje cell model reveals a critical role for axonal compartmentalization. Front Cell Neurosci 9:47
+// Modified to include soma voltage shift for simulation of calcium bursts under tDCS
+load_file("nrngui.hoc")
+load_file("PC_param.hoc")
+
+// Soma
+create soma
+soma {
+	nseg = 1
+	diam = 29.8
+	cm = 0.77
+	L =  29.8
+	Ra = 122
+
+	insert Leak
+	e_Leak = eleak
+	gmax_Leak = LeakSoma
+
+	insert Cav3_1
+	pcabar_Cav3_1 = Cav3_1Soma
+
+	insert Cav2_1
+	pcabar_Cav2_1 = Cav2_1Soma
+
+	insert HCN1
+	gbar_HCN1 = HCNSoma
+	eh = -34.4
+
+	insert Nav1_6
+	gbar_Nav1_6 = Nav1_6Soma
+	ena = 60
+
+	insert Kv3_4
+	gkbar_Kv3_4 = Kv3_4Soma
+	ek = -88
+
+	insert Kv1_1
+	gbar_Kv1_1 = Kv1_1Soma
+
+	insert Cav3_2
+	gcabar_Cav3_2 = Cav3_2Soma
+
+	insert Kca3_1
+	gkbar_Kca3_1 = Kca3_1Soma
+
+	insert Cav3_3
+	pcabar_Cav3_3 = Cav3_3Soma
+
+	insert Kir2_3
+	gkbar_Kir2_3 = PC_KirSoma
+
+	insert Kca1_1
+	gbar_Kca1_1 = Kca1_1Soma
+
+	insert Kca2_2
+	gkbar_Kca2_2 = Kca2_2Soma
+
+	insert cdp5
+	Nannuli_cdp5 = 0.326 + (1.94 * (diam)) + (0.289*(diam)*(diam)) - ((3.33e-2)*(diam)*(diam)*(diam)) + ((1.55e-3)*(diam)*(diam)*(diam)*(diam)) - (2.55e-5*(diam)*(diam)*(diam)*(diam)*(diam))
+	Buffnull2_cdp5 = 64.2 - 57.3* exp(-(diam)/1.4)
+	rf3_cdp5 = 0.162 - 0.106* exp(-(diam)/2.29)
+	rf4_cdp5 = 0.000267 + 0.0167* exp(-(diam)/0.722) + 0.0028* exp(-(diam)/4)
+
+	TotalPump_cdp5 = 5e-8
+
+	pt3dclear()
+	pt3dadd(0.0, 0, 0.0, 29.8)
+	pt3dadd(0.0, 29.8, 0.0, 29.8)
+
+	ion_style("ca_ion", 1, 1, 0, 1, 0) 
+	eca = 137.52625 
+	cai = cai0_ca_ion
+	cao = cao0_ca_ion
+}
+
+// Dendrites
+load_file("createDendrites.hoc")
+objref alldend, Sdend, Mdend, Ldend
+alldend = new SectionList()
+Sdend = new SectionList()
+Mdend = new SectionList()
+Ldend = new SectionList()
+forsec "dend*" {alldend.append() }
+load_file("locateDendrites.hoc")
+load_file("connectDendrites.hoc")
+
+forsec alldend {
+	Ra = 122
+	
+	insert Leak
+	e_Leak = eleak
+
+	insert Cav2_1 
+	pcabar_Cav2_1 = Cav2_1Dend
+
+	insert Kca1_1
+	gbar_Kca1_1 = Kca1_1Dend
+
+	insert Kv4_3
+	gkbar_Kv4_3 = Kv4_3Dend
+
+	insert Kv1_1
+	gbar_Kv1_1 = Kv1_1Dend
+
+	insert Kv1_5
+	gKur_Kv1_5 = Kv1_5Dend
+
+	insert Kv3_3
+	gbar_Kv3_3 = Kv3_3Dend
+
+	insert Cav3_3
+	pcabar_Cav3_3 = Cav3_3Dend
+
+	insert HCN1
+	gbar_HCN1 = HCNDend
+	eh = -34.4
+		
+	TotalPump_cdp5 = 2e-8
+}
+
+forsec Mdend {
+	insert Cav3_2
+	gcabar_Cav3_2 = Cav3_2Dend
+
+	insert Kca3_1 
+	gkbar_Kca3_1 = Kca3_1Dend
+
+	insert Cav3_1 
+	pcabar_Cav3_1 = Cav3_1Dend
+
+	insert Kca2_2 
+	gkbar_Kca2_2 = Kca2_2Dend
+
+	insert Kir2_3
+	gkbar_Kir2_3 = PC_KirDend
+}
+
+forsec Ldend {
+	insert Nav1_6
+	gbar_Nav1_6 = Nav1_6Dend
+	ena = 60
+
+	ek = -88
+
+	eca = 137.52625
+	cai = cai0_ca_ion
+	cao = cao0_ca_ion
+	ion_style("ca_ion", 1, 1, 0, 1, 0)
+}
+
+load_file("CmParams.hoc")
+load_file("loadExtraParams.hoc")
+
+// Axon AIS. First section after the soma
+create axonAIS
+axonAIS {
+	nseg = 1
+	diam = 0.97 
+	cm = 0.77
+	L = 17
+	Ra = 122
+	
+	insert Leak
+	e_Leak = eleak
+	gmax_Leak = 0.0003
+	
+	insert Nav1_6
+	gbar_Nav1_6 = Nav1_6AIS
+	ena = 75
+	
+	insert Cav3_1 
+	pcabar_Cav3_1 = Cav3_1Ais
+	
+	insert Cav2_1 
+	pcabar_Cav2_1 = Cav2_1AIS
+	
+	insert Kv3_4
+	gkbar_Kv3_4 = Kv3_4AIS
+	ek = -88
+	
+	insert cdp5
+	Nannuli_cdp5 = 0.326 + (1.94 * (diam)) + (0.289*(diam)*(diam)) - ((3.33e-2)*(diam)*(diam)*(diam)) + ((1.55e-3)*(diam)*(diam)*(diam)*(diam)) - (2.55e-5*(diam)*(diam)*(diam)*(diam)*(diam))
+	Buffnull2_cdp5 = 64.2 - 57.3* exp(-(diam)/1.4)
+	rf3_cdp5 = 0.162 - 0.106* exp(-(diam)/2.29)
+	rf4_cdp5 = 0.003
+
+	TotalPump_cdp5 = 5e-8
+	
+	
+	ion_style("ca_ion", 1, 1, 0, 1, 0) 
+	eca = 137.52625
+	cai = cai0_ca_ion
+	cao = cao0_ca_ion
+}
+
+// AISK	
+create axonAISK
+axonAISK {
+	nseg = 1
+	diam = 0.97 
+	cm = 0.77
+	L = 4 
+	Ra = 122
+	
+	insert Leak
+	e_Leak = eleak
+	gmax_Leak = 0.0003
+	
+	insert Kv1_1
+	gbar_Kv1_1 = Kv1_1AisK
+	ek = -88
+
+}
+// First Myelination
+create axonmyelin
+axonmyelin {
+	nseg = 1
+	diam = 0.73
+	L = 100
+
+	insert pas 
+	e_pas = -63 
+	g_pas = 5.60e-9 
+	cm = 1.87e-11
+	Ra = 122
+}
+	
+// First Node of Ranvier
+create axonNOR
+axonNOR {	
+	nseg = 1
+	diam = 0.73 
+	cm = 0.77
+	L = 4 
+	Ra = 122
+	
+	insert Leak
+	e_Leak = eleak
+	gmax_Leak = 0.0003
+	
+	insert Nav1_6
+	gbar_Nav1_6 = Nav1_6Nor
+	ena = 60
+
+	insert Kv3_4
+	gkbar_Kv3_4 = Kv3_4Nor
+	ek = -88
+	    
+	insert cdp5
+	Nannuli_cdp5 = 0.326 + (1.94 * (diam)) + (0.289*(diam)*(diam)) - ((3.33e-2)*(diam)*(diam)*(diam)) + ((1.55e-3)*(diam)*(diam)*(diam)*(diam)) - (2.55e-5*(diam)*(diam)*(diam)*(diam)*(diam))
+	Buffnull2_cdp5 = 64.2 - 57.3* exp(-(diam)/1.4)
+	rf3_cdp5 = 0.162 - 0.106* exp(-(diam)/2.29)
+	rf4_cdp5 = 0.003
+		
+	insert Cav3_1 
+	pcabar_Cav3_1 = Cav3_1Nor
+	  
+	insert Cav2_1 
+	pcabar_Cav2_1 = Cav2_1Nor
+	
+	TotalPump_cdp5 = 5e-7
+}
+	
+// second part of the axon
+create axonmyelin2
+axonmyelin2 {
+	nseg = 1
+	diam = 0.73
+	L = 100 
+	
+	insert pas 
+	e_pas = -63 
+	g_pas = 5.60e-9 
+	cm = 1.87e-11 
+	Ra = 122
+}
+	
+// Second Node of Ranvier	
+create axonNOR2
+axonNOR2 {
+	nseg = 1
+	diam = 0.73 
+	cm = 0.77
+	L = 4 
+	Ra = 122
+	
+	insert Leak
+	e_Leak = eleak
+	gmax_Leak = 0.0003
+	
+	insert Nav1_6
+	gbar_Nav1_6 = Nav1_6Nor2
+	ena = 60
+
+	insert Kv3_4
+	gkbar_Kv3_4 = Kv3_4Nor2
+	ek = -88
+
+	insert cdp5
+	Nannuli_cdp5 = 0.326 + (1.94 * (diam)) + (0.289*(diam)*(diam)) - ((3.33e-2)*(diam)*(diam)*(diam)) + ((1.55e-3)*(diam)*(diam)*(diam)*(diam)) - (2.55e-5*(diam)*(diam)*(diam)*(diam)*(diam))
+	Buffnull2_cdp5 = 64.2 - 57.3* exp(-(diam)/1.4)
+	rf3_cdp5 = 0.162 - 0.106* exp(-(diam)/2.29)
+	rf4_cdp5 = 0.003
+	
+	insert Cav3_1 
+	pcabar_Cav3_1 = Cav3_1Nor2
+	  
+	insert Cav2_1 
+	pcabar_Cav2_1 = Cav2_1Nor2
+	
+	TotalPump_cdp5 = 5e-7
+}
+
+// Third part of the axon
+create axonmyelin3
+axonmyelin3 {
+	nseg = 1
+	diam = 0.73
+	L = 100 
+	
+	insert pas 
+	e_pas = -63 
+	g_pas = 5.60e-9 
+	cm = 1.87e-11 
+	Ra = 122
+}
+	
+// Third Node of Ranvier
+create axonNOR3
+axonNOR3 {
+	nseg = 1
+	diam = 0.73 
+	cm = 0.77
+	L = 4 
+	Ra = 122
+	
+	insert Leak
+	e_Leak = eleak
+	gmax_Leak = 0.0003
+	
+	insert Nav1_6
+	gbar_Nav1_6 = Nav1_6Nor3
+	ena = 60
+
+	insert Kv3_4
+	gkbar_Kv3_4 = Kv3_4Nor3
+	ek = -88
+	
+	insert cdp5
+	Nannuli_cdp5 = 0.326 + (1.94 * (diam)) + (0.289*(diam)*(diam)) - ((3.33e-2)*(diam)*(diam)*(diam)) + ((1.55e-3)*(diam)*(diam)*(diam)*(diam)) - (2.55e-5*(diam)*(diam)*(diam)*(diam)*(diam))
+	Buffnull2_cdp5 = 64.2 - 57.3* exp(-(diam)/1.4)
+	rf3_cdp5 = 0.162 - 0.106* exp(-(diam)/2.29)
+	rf4_cdp5 = 0.003
+	
+	insert Cav3_1 
+	pcabar_Cav3_1 = Cav3_1Nor3
+	  
+	insert Cav2_1 
+	pcabar_Cav2_1 = Cav2_1Nor3
+	
+	TotalPump_cdp5 = 5e-7
+}
+	
+// Third part of the axon
+create axonmyelin4
+axonmyelin4 {
+	nseg = 1
+	diam = 0.73
+	L = 100 
+	
+	insert pas 
+	e_pas = -63 
+	g_pas = 5.60e-9 
+	cm = 1.87e-11 
+	Ra = 122
+}
+
+// Collateral.
+create axoncoll
+axoncoll {
+	nseg = 1
+	diam = 0.6
+	L = 100
+	Ra = 122
+
+	insert Leak
+	e_Leak = eleak
+	gmax_Leak = 0.0003
+	 
+	insert Nav1_6
+	gbar_Nav1_6 = Nav1_6Axoncoll
+	ena = 60
+
+	insert Kv3_4
+	gkbar_Kv3_4 = Kv3_4Axoncoll
+	ek = -88
+	
+	insert Cav3_1 
+	pcabar_Cav3_1 = Cav3_1Axoncoll
+	  
+	insert Cav2_1 
+	pcabar_Cav2_1 = Cav2_1Axoncoll
+	
+	insert cdp5
+	Nannuli_cdp5 = 0.326 + (1.94 * (diam)) + (0.289*(diam)*(diam)) - ((3.33e-2)*(diam)*(diam)*(diam)) + ((1.55e-3)*(diam)*(diam)*(diam)*(diam)) - (2.55e-5*(diam)*(diam)*(diam)*(diam)*(diam))
+	Buffnull2_cdp5 = 64.2 - 57.3* exp(-(diam)/1.4)
+	rf3_cdp5 = 0.162 - 0.106* exp(-(diam)/2.29)
+	rf4_cdp5 = 0.003
+		
+	TotalPump_cdp5 = 5e-7
+	
+	
+	ion_style("ca_ion", 1, 1, 0, 1, 0) 
+	eca = 137.52625
+	cai = cai0_ca_ion
+	cao = cao0_ca_ion
+}
+        
+        
+// Collateral second part
+create axoncoll2
+axoncoll2 {
+	nseg = 1
+	diam = 0.6
+	L = 100
+	Ra = 122
+
+	insert Leak
+	e_Leak = eleak
+	gmax_Leak = 0.0003
+	 
+	insert Nav1_6
+	gbar_Nav1_6 = Nav1_6Axoncoll
+	ena = 60
+
+
+	insert Kv3_4
+	gkbar_Kv3_4 = Kv3_4Axoncoll
+	ek = -88
+	
+	insert cdp5
+	Nannuli_cdp5 = 0.326 + (1.94 * (diam)) + (0.289*(diam)*(diam)) - ((3.33e-2)*(diam)*(diam)*(diam)) + ((1.55e-3)*(diam)*(diam)*(diam)*(diam)) - (2.55e-5*(diam)*(diam)*(diam)*(diam)*(diam))
+	Buffnull2_cdp5 = 64.2 - 57.3* exp(-(diam)/1.4)
+	rf3_cdp5 = 0.162 - 0.106* exp(-(diam)/2.29)
+	rf4_cdp5 = 0.003
+	
+	insert Cav3_1 
+	pcabar_Cav3_1 = Cav3_1Axoncoll
+	  
+	insert Cav2_1 
+	pcabar_Cav2_1 = Cav2_1Axoncoll
+	
+	TotalPump_cdp5 = 5e-7
+	
+        
+	ion_style("ca_ion", 1, 1, 0, 1, 0) 
+	eca = 137.52625
+	cai = cai0_ca_ion
+	cao = cao0_ca_ion
+}
+	  
+// Connections of the axon	  
+	connect axonAIS(1), soma(0)
+	connect axonAISK(1), axonAIS(0)
+	connect axonmyelin(1), axonAISK(0)		
+	connect axonNOR(1), axonmyelin(0)
+	connect axonmyelin2(1), axonNOR(0)
+	connect axonNOR2(1), axonmyelin2(0)
+	connect axonmyelin3(1), axonNOR2(0)
+	connect axonNOR3(1), axonmyelin3(0)
+	connect axonmyelin4(1), axonNOR3(0)
+	
+	
+	connect axoncoll(1), axonNOR2(0)
+	connect axoncoll2(1), axoncoll(0)
+	
+objref f_Vshifts
+f_Vshifts = new File()
+f_Vshifts.ropen("Vshifts_all_soma.txt")
+
+objref strobj_dend
+strobj_dend = new StringFunctions()
+
+forall{
+	strdef tmpname
+	tmpname = secname()
+	index_soma = strobj_dend.substr(tmpname,"soma")
+	if (index_soma>=0) {
+		tDCSvshift = f_Vshifts.scanvar() // Read and apply voltage shift only for the soma compartment
+		vshift_Nav1_6 = tDCSvshift
+		vshift_Kv1_1 = tDCSvshift
+		vshift_Kv3_4 = tDCSvshift
+		vshift_Kir2_3 = tDCSvshift
+		vshift_Kca1_1 = tDCSvshift
+		vshift_Kca2_2 = tDCSvshift
+		vshift_Kca3_1 = tDCSvshift	
+		vshift_Cav2_1 = tDCSvshift	
+		vshift_Cav3_1 = tDCSvshift
+		vshift_Cav3_2 = tDCSvshift
+		vshift_Leak = tDCSvshift
+	}
+}
+f_Vshifts.close()

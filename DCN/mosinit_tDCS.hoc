@@ -1,0 +1,90 @@
+// Simulate deep cerebellar nuclear cell activity during synaptically-triggered rebound spiking
+// (c) Xu (Shawn) Zhang, UConn
+// xu.3.zhang@uconn.edu
+
+load_file("nrngui.hoc")
+load_file("DCN_simulation.hoc")
+
+access soma
+
+// soma.diam = 100
+
+tstop = 3000
+
+objref f_tDCSparams
+f_tDCSparams = new File()
+f_tDCSparams.ropen("tDCSparams.txt")
+ampparam = f_tDCSparams.scanvar()
+f_tDCSparams.close()
+
+forall {
+  insert extracellular
+  insert xtrau
+}
+
+load_file("interpxyzu.hoc")	// only interpolates sections that have xtrau
+load_file("calcrxcu.hoc")	// computes transfer r between segments and recording electrodes
+load_file("calcd.hoc")	// computes scale factor used to calculate extracellular potential
+			            //   produced by a uniform electrical field
+load_file("setpointersu.hoc")	// automatically calls grindaway() in interpxyzu.hoc
+load_file("zapstimu_DC.hoc")		// extracellular stimulus
+
+
+setstim(0, 1e6, ampparam) // Positive: hyperpolarizing soma
+changefield(1000, 90, 90)
+
+load_file("plot_synapses.hoc")
+
+objref f_trialname
+f_trialname = new File()
+f_trialname.ropen("trialname_tDCS.txt")
+strdef f_soma
+f_trialname.scanstr(f_soma)
+f_trialname.close()
+
+
+gGABA = 1600e-6*QdTconductances
+tauRiseGABA = 0.25 / QdTsynapseTaus // From Dieter Jaeger's code cn6c_const_dj4.g
+tauFallGABA = 5.1 / QdTsynapseTaus // Telgkamp P, Padgett DE, Ledoux VA, Woolley CS, Raman IM (2004)
+
+celsius = 37.0
+TempOrigDCN = 32.0
+TempAnchisi = 24.0
+
+Q10channelGating = 3.0
+Q10synapseGating = 2.0
+Q10conductances = 1.4
+Q10CaConc = 2.0
+QdTsynapseTausAnchisi = Q10synapseGating^((celsius - TempAnchisi) / 10.0)
+QdTconductanceAnchisi = Q10conductances^((celsius - TempAnchisi) / 10.0)
+QdTchannelGating = Q10channelGating^((celsius - TempOrigDCN) / 10.0)
+QdTsynapseTaus = Q10synapseGating^((celsius - TempOrigDCN) / 10.0)
+QdTconductances = Q10conductances^((celsius - TempOrigDCN) / 10.0)
+QdTCaConc = Q10CaConc^((celsius - TempOrigDCN) / 10.0)
+
+objref somastim
+soma somastim = new IClamp(0.5)
+somastim.del = 500
+somastim.dur = 500
+somastim.amp = -0.15
+
+// Record soma
+objref rec_v_soma
+rec_v_soma = new Vector()
+rec_v_soma.record(&soma.v(0.5))
+
+dt = 0.025
+celsius = 37
+v_init = -50
+
+finitialize(v_init)
+run()
+
+// Save soma
+objref sav_v_soma
+sav_v_soma = new File()
+sav_v_soma.wopen(f_soma)
+rec_v_soma.printf(sav_v_soma)
+sav_v_soma.close()
+
+quit()

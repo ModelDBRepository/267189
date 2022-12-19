@@ -1,0 +1,210 @@
+// Simulate Purkinje cell (Masoli et al.,2015) activity under mossy fiber inputs
+// Resume state after the first 20 seconds and start recording
+// (c) Xu (Shawn) Zhang, UConn
+// xu.3.zhang@uconn.edu
+
+load_file("nrngui.hoc")
+load_file("Purkinje.hoc")
+
+cvode.active(0)
+
+numsyn_exc = 1000
+numsyn_inh = 100
+numsyn_all = numsyn_exc+numsyn_inh
+
+objref f_tDCSparams
+f_tDCSparams = new File()
+ampparam = 0
+synparam = 0
+
+// Poisson process inputs to PYNs
+objref rngdendns
+rngdendns = new Random(111)
+rngdendns.normal(1,0.16)
+objref rngdendnsseed
+rngdendnsseed = new Random(222)
+rngdendnsseed.uniform(100,999)
+objref rngdendnsstart
+rngdendnsstart = new Random(333)
+rngdendnsstart.normal(250,100)
+
+// Excitatory synapses
+objref f_dendname
+strdef tmpdendname
+f_dendname = new File()
+f_dendname.ropen("dend_train/dendnames_delayedonset.txt")
+strdef straccessdend, strtmpsyn, strtmpns, strtmpnsnc
+objref dend_syn_exc[numsyn_exc], dendns[numsyn_exc], dendnsnc[numsyn_exc]
+
+objref rec_event_dend[numsyn_all]
+tmpseed = rngdendnsseed.repick()
+
+for i = 0,numsyn_exc-1 {
+	f_dendname.scanstr(tmpdendname)
+	
+	sprint(strtmpns,"%s%s",tmpdendname," dendns[i] = new NetStim(0.25)")
+	execute(strtmpns)
+	
+	sprint(strtmpsyn,"%s%s",tmpdendname," dend_syn_exc[i] = new NoisyExp2Syn(0.5)")
+	execute(strtmpsyn)
+	
+	dendns[i].number=1e4
+	dendns[i].interval=100
+	dendns[i].start=200
+	dendns[i].noise=1
+	tmpseed = rngdendnsseed.repick()
+	
+	dendns[i].seed(tmpseed)
+	
+	dend_syn_exc[i].tau1 = 0.6 // (ms)
+	dend_syn_exc[i].tau2 = 1 // (ms)
+	dend_syn_exc[i].e = 0
+	
+	sprint(straccessdend,"%s%s","access ",tmpdendname)
+	execute(straccessdend)
+	
+	sprint(strtmpnsnc,"%s%s",tmpdendname," dendnsnc[i] = new NetCon(dendns[i], dend_syn_exc[i], 0, 0, 0*synparam)")
+	execute(strtmpnsnc)
+	
+	rec_event_dend[i] = new Vector()
+	dendnsnc[i].record(rec_event_dend[i])
+}
+f_dendname.close()
+
+// Inhibitory synapses
+objref f_dendname_inh
+strdef tmpdendname_inh
+f_dendname_inh = new File()
+f_dendname_inh.ropen("dend_train/dendnames_inh_delayedonset.txt")
+strdef straccessdend_inh, strtmpsyn_inh, strtmpns_inh, strtmpnsnc_inh
+objref dend_syn_inh[numsyn_inh], dendns_inh[numsyn_inh], dendnsnc_inh[numsyn_inh]
+	
+for i = 0,numsyn_inh-1 {
+	f_dendname_inh.scanstr(tmpdendname_inh)
+	
+	sprint(strtmpsyn_inh,"%s%s",tmpdendname_inh," dend_syn_inh[i] = new NoisyExp2Syn(0.5)")
+	execute(strtmpsyn_inh)
+	
+	sprint(strtmpns_inh,"%s%s",tmpdendname_inh," dendns_inh[i] = new NetStim(0.75)")
+	execute(strtmpns_inh)
+	
+	soma dendns_inh[i] = new NetStim(0.75)
+	dendns_inh[i].number=1e4
+	dendns_inh[i].interval=35.7
+	dendns_inh[i].start=200
+	dendns_inh[i].noise=1
+	dendns_inh[i].seed(rngdendnsseed.repick())
+	
+	dend_syn_inh[i].tau1 = 1 // (ms)
+	dend_syn_inh[i].tau2 = 5 // (ms)
+	dend_syn_inh[i].e = -80 // (mV)
+	
+	
+	sprint(straccessdend_inh,"%s%s","access ",tmpdendname_inh)
+	execute(straccessdend_inh)
+	
+	sprint(strtmpnsnc_inh,"%s%s",tmpdendname_inh," dendnsnc_inh[i] = new NetCon(dendns_inh[i], dend_syn_inh[i], 0, 0, 0)")
+	execute(strtmpnsnc_inh)
+	
+	rec_event_dend[i+numsyn_exc] = new Vector()
+	dendnsnc_inh[i].record(rec_event_dend[i+numsyn_exc])
+}
+f_dendname_inh.close()
+
+forall {
+  insert extracellular
+  insert xtrau
+}
+
+load_file("interpxyzu.hoc")	// only interpolates sections that have xtrau
+load_file("calcrxcu.hoc")	// computes transfer r between segments and recording electrodes
+load_file("calcd.hoc")	// computes scale factor used to calculate extracellular potential
+			            //   produced by a uniform electrical field
+load_file("setpointersu.hoc")	// automatically calls grindaway() in interpxyzu.hoc
+load_file("zapstimu_DC.hoc")		// extracellular stimulus
+
+setstim(0, 1e6, 0) // Positive: hyperpolarizing soma
+changefield(0, 90, 100)
+
+access soma
+
+// Record soma
+objref rec_v_soma
+rec_v_soma = new Vector()
+rec_v_soma.record(&soma.v(0.5))
+
+dt = 0.025
+celsius = 37
+v_init = -58
+tstop = 5000
+init()
+
+objref ss,f_ss
+ss = new SaveState()
+f_ss = new File("currentState.dat")
+ss.fread(f_ss)
+ss.restore()
+f_ss.close()
+
+objref f_trialname
+f_trialname = new File()
+f_trialname.ropen("trialname_dend_train_delayedonset.txt")
+strdef f_soma, f_dend_event
+f_trialname.scanstr(f_soma)
+f_trialname.scanstr(f_dend_event)
+strdef tmpfdend1,tmpfdend2
+for i = 0,numsyn_all-1 {
+	sprint(tmpfdend1,"%s%d","strdef f_dend_",i)
+	sprint(tmpfdend2,"%s%d%s","f_trialname.scanstr(f_dend_",i,")")
+	execute(tmpfdend1)
+	execute(tmpfdend2)
+}
+f_trialname.close()
+
+objref f_tDCSparams
+f_tDCSparams = new File()
+f_tDCSparams.ropen("tDCSparams_dend_train_delayedonset.txt")
+ampparam = f_tDCSparams.scanvar()
+synparam = f_tDCSparams.scanvar()
+f_tDCSparams.close()
+
+setstim(0, 1e6, ampparam) // Positive: hyperpolarizing soma
+changefield(0, 90, 100)
+
+for i = 0,numsyn_exc-1 {
+	dendns[i].number=1e5
+	dendnsnc[i].weight=0.00025*synparam
+	rec_event_dend[i] = new Vector()
+	dendnsnc[i].record(rec_event_dend[i])
+}
+
+for i = 0,numsyn_inh-1 {
+	dendns_inh[i].number=1e5
+	dendnsnc_inh[i].weight=0.001*synparam
+	rec_event_dend[i+numsyn_exc] = new Vector()
+	dendnsnc_inh[i].record(rec_event_dend[i+numsyn_exc])
+}
+
+continuerun(t+tstop)
+
+// Save soma
+objref sav_v_soma
+sav_v_soma = new File()
+sav_v_soma.wopen(f_soma)
+rec_v_soma.printf(sav_v_soma)
+sav_v_soma.close()
+
+// Save dend events
+objref rec_dend
+rec_dend = new File()
+rec_dend.wopen(f_dend_event)
+for i = 0,numsyn_all-1 {
+	for j = 0,rec_event_dend[i].size()-1 {
+		if (rec_event_dend[i].size()>0) {
+			rec_dend.printf("%d,%f\n",i,rec_event_dend[i].x(j)) // Column 1 indicates no. of the ION (0-7) that corresponds to the AP (Column 2)
+		}
+	}
+}
+rec_dend.close()
+
+quit()

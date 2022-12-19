@@ -1,0 +1,77 @@
+// Simulate Purkinje cell (Masoli et al.,2015) activity under climbing fiber inputs
+// (c) Xu (Shawn) Zhang, UConn
+// xu.3.zhang@uconn.edu
+
+load_file("nrngui.hoc")
+load_file("Purkinje.hoc")
+
+cvode.active(0)
+
+objref f_trialname
+f_trialname = new File()
+f_trialname.ropen("trialname_1cs.txt")
+strdef f_soma
+f_trialname.scanstr(f_soma)
+f_trialname.close()
+
+objref f_tDCSparams
+f_tDCSparams = new File()
+f_tDCSparams.ropen("tDCSparams_1cs.txt")
+ampparam = f_tDCSparams.scanvar()
+f_tDCSparams.close()
+
+// Climbing fiber
+objref cf
+cf = new SectionList()
+forsec Mdend {cf.append()}
+soma cf.append()
+cf.unique()
+
+load_file("cfdistrib.hoc")
+cfstart = 500
+for i=0,synlist.count()-1 {
+    synlist.object(i).onset = cfstart
+    synlist.object(i).gmax = 1.2251821e-3*1.3
+    synlist.object(i).tau0 = 0.3
+    synlist.object(i).tau1 = 3
+}
+
+// Record soma
+objref rec_v_soma
+rec_v_soma = new Vector()
+rec_v_soma.record(&soma.v(0.5))
+
+dt = 0.025
+celsius = 37
+tstop = 5000
+v_init = -50
+
+forall {
+  insert extracellular
+  insert xtrau
+}
+
+load_file("interpxyzu.hoc")	// only interpolates sections that have xtrau
+load_file("calcrxcu.hoc")	// computes transfer r between segments and recording electrodes
+load_file("calcd.hoc")	// computes scale factor used to calculate extracellular potential
+			            //   produced by a uniform electrical field
+load_file("setpointersu.hoc")	// automatically calls grindaway() in interpxyzu.hoc
+load_file("zapstimu_DC.hoc")		// extracellular stimulus
+
+setstim(0, 1e6, ampparam) // Positive: hyperpolarizing soma
+changefield(0, 90, 100)
+
+access soma
+// load_file("vm.ses")
+
+finitialize(v_init)
+run()
+
+// Save soma
+objref sav_v_soma
+sav_v_soma = new File()
+sav_v_soma.wopen(f_soma)
+rec_v_soma.printf(sav_v_soma)
+sav_v_soma.close()
+
+quit()

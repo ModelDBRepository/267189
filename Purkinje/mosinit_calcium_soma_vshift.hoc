@@ -1,0 +1,58 @@
+// Simulate Purkinje cell (Masoli et al.,2015) activity during calcium bursting
+// with voltage shift applied to the somatic compartment
+// (c) Xu (Shawn) Zhang, UConn
+// xu.3.zhang@uconn.edu
+
+load_file("nrngui.hoc")
+
+
+load_file("Purkinje_calcium_soma_vshift.hoc")
+
+cvode.active(0)
+
+// axonAIS.pcabar_Cav3_1 = 0
+// axonAIS.pcabar_Cav2_1 = 0
+// axonAIS.gbar_Nav1_6 = 0
+
+dt = 0.025
+celsius = 37
+tstop = 2400
+v_init = -50
+
+objref f_trialname
+f_trialname = new File()
+f_trialname.ropen("trialname_calcium_soma_vshift.txt")
+strdef f_soma
+f_trialname.scanstr(f_soma)
+f_trialname.close()
+
+// Inducing calcium spikes
+stim0del = 200
+stim0dur = 200000
+stim0amp = 2
+
+objref stim
+soma stim = new IClamp(0.5)
+stim.del = stim0del
+stim.dur = stim0dur
+stim.amp = stim0amp
+
+// Record soma
+objref rec_v_soma
+rec_v_soma = new Vector()
+rec_v_soma.record(&soma.v(0.5))
+
+access soma
+// load_file("vm.ses")
+
+finitialize(v_init)
+run()
+
+// Save soma
+objref sav_v_soma
+sav_v_soma = new File()
+sav_v_soma.wopen(f_soma)
+rec_v_soma.printf(sav_v_soma)
+sav_v_soma.close()
+
+quit()

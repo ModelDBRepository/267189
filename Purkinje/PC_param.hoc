@@ -1,0 +1,67 @@
+// Conductances for all the channels with the same order as in the template
+
+// SOMA
+eleak = -63
+LeakSoma = 1.1e-3
+Cav3_1Soma = 7e-6
+Cav2_1Soma = 2.2e-4 
+HCNSoma = 0.0004
+Nav1_6Soma = 0.214
+Kv3_4Soma = 0.05
+Kv1_1Soma = 0.002 
+Cav3_2Soma = 0.0008 
+Kca3_1Soma = 0.01 
+Cav3_3Soma = 0.0001 
+PC_KirSoma = 0.00003 
+Kca1_1Soma = 0.01 
+Kca2_2Soma = 1e-3 
+
+
+// DEND
+Cav2_1Dend = 1e-3 
+Kca1_1Dend = 3.5e-2
+Kv4_3Dend = 0.001
+Kv1_1Dend = 0.0012 
+Kv1_5Dend = 0.13195e-3
+Kv3_3Dend = 0.01 
+Cav3_3Dend = 0.0001 
+Cav3_2Dend = 0.0012 
+Kca3_1Dend = 0.002
+Cav3_1Dend = 5e-6 
+Kca2_2Dend = 1e-3
+PC_KirDend = 0.00001
+Nav1_6Dend = 0.016
+HCNDend = 0.000004 
+
+// AIS
+Cav3_1Ais = 8.2e-6
+Nav1_6AIS = 0.50 
+Cav2_1AIS = 2.2e-4 
+Kv3_4AIS = 0.01 
+
+// AISK
+Kv1_1AisK = 0.01 
+
+// First node Of Ranvier
+Nav1_6Nor = 0.03 
+Kv3_4Nor = 0.02  
+Cav3_1Nor = 1e-5 
+Cav2_1Nor = 2.2e-4 
+
+// Second node Of Ranvier
+Nav1_6Nor2 = 0.03 
+Kv3_4Nor2 = 0.02  
+Cav3_1Nor2 = 1e-5 
+Cav2_1Nor2 = 2.2e-4  
+
+// Third node Of Ranvier
+Nav1_6Nor3 = 0.03
+Kv3_4Nor3 = 0.02  
+Cav3_1Nor3 = 1e-5 
+Cav2_1Nor3 = 2.2e-4 
+
+// Axon collateral
+Nav1_6Axoncoll = 0.03 
+Kv3_4Axoncoll = 0.02
+Cav3_1Axoncoll = 1e-5 
+Cav2_1Axoncoll = 2.2e-4 

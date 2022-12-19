@@ -1,0 +1,46 @@
+<html>
+<body>
+<p>
+# README for Crbl_tDCS_Zhang2021
+Simulation code for Zhang, X., Hancock, R., and Santaniello, S. (2021) Transcranial Direct Current Stimulation of Cerebellum Alters Spiking Precision in Cerebellar Cortex: A Modeling Study of Cellular Responses. PLoS Comp Biol. DOI: 10.1371/journal.pcbi.1009609.
+</p>
+<p>
+Dependencies:
+<ul>
+<li> NEURON v.7.7 or later (may run on some older versions)</li>
+<li> MATLAB r2017a or later (may run on some older versions)</li>
+</ul>
+</p>
+<p>
+The codes were executed on Windows 10. Not tested on other operating systems (Unix/macOS etc).
+</p>
+<p>
+To run simulations for granule cells:
+<ol>
+<li> Compile NEURON mechanisms in the (./Granule/mod_files/) folder using the mknrndll executable; copy the generated nrnmech.dll file to the (./Granule/) folder.</li>
+<li>In MATLAB, run the script "tDCSsearch_GrC.m", which sets parameters for the tDCS-induced electric field intensity and filenames. It then calls the NEURON script "mosinit_tDCS_synapse_189-1-33dw.hoc" which simulates the granule cell activity under synaptic inputs under the given tDCS settings.</li>
+</ol>
+</p>
+<p>
+To run simulations for deep cerebellar nuclear cells:
+<ol>
+<li>Compile NEURON mechanisms in the (./DCN/mod_files/) folder using the mknrndll executable; copy the generated nrnmech.dll file to the (./DCN/) folder.</li>
+<li>In MATLAB, run the script "tDCSsearch_DCN.m", which sets parameters and calls the NEURON script "mosinit_tDCS_synapse_189-1-33dw.hoc". The latter simulates the DCN activity during rebound spiking under the given tDCS settings.</li>
+</ol>
+</p>
+<p>
+To run simulations for Purkinje cells:
+<ol>
+<li>Compile NEURON mechanisms in the (./Purkinje/mod_files/) folder using the mknrndll executable; copy the generated nrnmech.dll file to the (./Purkinje/) folder.</li>
+<li>In MATLAB, run the script "tDCSsearch_dend_train_delayedonset.m", which sets parameters and calls the NEURON script "mosinit_tDCS_synapse_189-1-33dw.hoc". The latter simulates the Purkinje cell activity under mossy fiber inputs under the given tDCS settings.</li>
+<li>Run the script "tDCSsearch_1cs.m", which sets parameters and calls the NEURON script "mosinit_tDCS_1cs.hoc". The latter simulates the Purkinje cell activity under climbing fiber inputs under the given tDCS settings.</li>
+<li>Run the script "tDCSsearch_caspike.m", which sets parameters and calls the NEURON script "mosinit_tDCS_caspike.hoc". The latter simulates the Purkinje cell calcium bursting activity under the given tDCS settings.</li>
+<li>Run the script "Vshift_search_calcium.m", which sets parameters and calls the NEURON script "mosinit_calcium_soma_vshift.hoc" or "mosinit_calcium_dend_vshift.hoc". The latter two simulate the Purkinje cell calcium bursting activity under voltage shifts applied to soma or dendritic compartments.</li>
+</ol>
+</p>
+<p>
+Scripts used to generate all the figures in the article, including estimated EF values and simulated values for all voxels in head models accrue to over 4 GB and are available at the link:
+<a href="https://drive.google.com/drive/folders/1udxxdToV9zuXK7h27znhCWIkQHau0D2w?usp=sharing">https://drive.google.com/drive/folders/1udxxdToV9zuXK7h27znhCWIkQHau0D2w?usp=sharing</a>
+</p>
+</body>
+</html>

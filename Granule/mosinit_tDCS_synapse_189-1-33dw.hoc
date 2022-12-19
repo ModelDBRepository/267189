@@ -1,0 +1,119 @@
+// Simulate granule cell activity under synaptic inputs
+// (c) Xu (Shawn) Zhang, UConn
+// xu.3.zhang@uconn.edu
+
+load_file("nrngui.hoc")
+load_file("189-1-33dw_GrC.hoc")
+
+access soma
+
+// Load filenames
+objref f_trialname
+f_trialname = new File()
+f_trialname.ropen("trialname_synapse_189-1-33dw.txt")
+strdef f_soma
+f_trialname.scanstr(f_soma)
+f_trialname.close()
+
+// Load parameters
+objref f_tDCSparams
+f_tDCSparams = new File()
+f_tDCSparams.ropen("tDCSparams_synapse_189-1-33dw.txt")
+frequency1 = f_tDCSparams.scanvar()
+ampparam = f_tDCSparams.scanvar()
+f_tDCSparams.close()
+
+// Setup tDCS mechanisms
+forall {
+  insert extracellular
+  insert xtrau
+}
+
+load_file("interpxyzu.hoc")	// only interpolates sections that have xtrau
+load_file("calcrxcu.hoc")	// computes transfer r between segments and recording electrodes
+load_file("calcd.hoc")	// computes scale factor used to calculate extracellular synapse
+			            //   produced by a uniform electrical field
+load_file("setpointersu.hoc")	// automatically calls grindaway() in interpxyzu.hoc
+load_file("zapstimu_DC.hoc")		// extracellular stimulus
+
+setstim(0, 1e6, ampparam) // Positive: hyperpolarizing soma
+changefield(0, 0, 90)
+
+// Record soma
+objref rec_v_soma
+rec_v_soma = new Vector()
+rec_v_soma.record(&soma.v(0.5))
+
+dt = 0.025
+// celsius = 37
+tstop = 2300
+v_init = -70
+
+
+objref stim
+soma stim = new IClamp(0.5)
+stim.del = 200
+stim.dur = 10
+stim.amp = 0.02405*2.059452412389559
+
+stim_scale = 2.4 // Changed from Diwakar et al., 2009
+
+objref dend_syn_ampa[2], spk_stim[2], dendnsnc[2]
+objref dend_syn_nmda[2], spk_stim_nmda[2], dendnsnc_nmda[2]
+	
+proc init() {
+	// Set two synapses on two different dendritic compartments
+	for i = 0,1 {
+		dend[i+17] spk_stim[i] = new NetStim(0.5)
+		spk_stim[i].interval=frequency1
+		spk_stim[i].number = int(tstop/frequency1)
+		spk_stim[i].start=100
+		spk_stim[i].noise=0
+
+		dend[i+17] dend_syn_ampa[i] = new GRANULE_Ampa_det_vi(0.9)
+		dend_syn_ampa[i].tau_facil=5
+		dend_syn_ampa[i].tau_rec=8
+		dend_syn_ampa[i].tau_1=1
+		dend_syn_ampa[i].U=0.43
+		dend_syn_ampa[i].gmax=1200*stim_scale
+
+		dend[i+17] dendnsnc[i] = new NetCon(spk_stim[i], dend_syn_ampa[i], 0, 0.1, 1)
+	}
+
+	for i = 0,1 {
+		dend[i+17] spk_stim_nmda[i] = new NetStim(0.5)
+		spk_stim_nmda[i].interval=frequency1
+		spk_stim_nmda[i].number = int(tstop/frequency1)
+		spk_stim_nmda[i].start=100
+		spk_stim_nmda[i].noise=0
+
+		dend[i+17] dend_syn_nmda[i] = new GRANULE_Nmda_det_vi(0.9)
+		dend_syn_nmda[i].tau_facil=5
+		dend_syn_nmda[i].tau_rec=8 
+		dend_syn_nmda[i].tau_1=1 
+		dend_syn_nmda[i].U=0.43
+		dend_syn_nmda[i].gmax=18800*stim_scale
+
+		dend[i+17] dendnsnc_nmda[i] = new NetCon(spk_stim_nmda[i], dend_syn_nmda[i], 0, 0.1, 1)
+	}
+
+	finitialize(v_init)
+	if (cvode.active()) {
+		cvode.re_init()
+	} else {
+		fcurrent()
+	}
+	frecord_init()
+}
+
+finitialize(v_init)
+run()
+
+// Save soma
+objref sav_v_soma
+sav_v_soma = new File()
+sav_v_soma.wopen(f_soma)
+rec_v_soma.printf(sav_v_soma)
+sav_v_soma.close()
+
+quit()
