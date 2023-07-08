@@ -107,10 +107,10 @@ Q10synapseGating = 2.0 // (Silver et al., 1996; Otis and Mody, 1992) Synaptic Q1
         // respectively (full references below), with both giving Q10s in the region of 2.
 Q10conductances = 1.4 // The middle of the range (1.2-1.5) given in Hille 3rd ed (2001) 
         // for ion channel conductances (p.51). Also, eg Milburn et al (1995) 
-        // Receptors Channels 3:201-211: ìThe conductance increases steeply with temperature,
-        // with Q10 ranging from 1.4 to 1.5î. However, also note Cao XJ, Oertel D (2005) 
+        // Receptors Channels 3:201-211: ‚ÄúThe conductance increases steeply with temperature,
+        // with Q10 ranging from 1.4 to 1.5‚Äù. However, also note Cao XJ, Oertel D (2005) 
         // J Neurophysiol 94:821-832. They get the results that some conductances have a 
-        // Q10 of 2 while other channel conductances donít change at all by changing 
+        // Q10 of 2 while other channel conductances don‚Äôt change at all by changing 
         // temp (Q10=1).
 Q10CaConc = 2.0 // Guesswork: I assume that calcium concentration changes due to a
         // combination of diffusion (Q10 of ca 1.4) and pumping action (Q10 of enzymatic
